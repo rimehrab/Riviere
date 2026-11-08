@@ -14,4 +14,11 @@ object HolderTypes {
         val desc: String? = null,
         val isBlock: Boolean = false
     )
+
+    data class TransactionEntry(
+        val amount: Float,
+        val isIncome: Boolean,
+        val category: String,
+        val presetDesc: String?
+    )
 }

@@ -29,7 +29,7 @@
             app:cardCornerRadius="22dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="24dp">
+            android:layout_marginTop="48dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -39,7 +39,7 @@
                     android:id="@+id/expense_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/expense"
+                    android:text="@string/balance"
                     android:textFontWeight="600"
                     android:layout_marginStart="20dp"
                     android:layout_marginTop="16dp"
@@ -115,7 +115,7 @@
                     android:id="@+id/budget_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/budget"
+                    android:text="@string/expense"
                     android:textColor="?colorOnPrimaryContainer"
                     android:alpha="0.72"
                     android:layout_marginTop="8dp"
@@ -155,7 +155,14 @@
 
         <include layout="@layout/total_header" />
 
-        <include layout="@layout/detail_item" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/transaction_recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp" />
 
     </LinearLayout>
 

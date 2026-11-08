@@ -20,6 +20,7 @@
             app:cardBackgroundColor="?colorPrimaryContainer">
 
             <ImageView
+                android:id="@+id/detail_icon"
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:layout_gravity="center"
@@ -35,6 +36,7 @@
             android:layout_marginStart="16dp">
 
             <TextView
+                android:id="@+id/detail_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="標題"
@@ -44,6 +46,7 @@
                 android:textColor="?colorOnSurface" />
 
             <TextView
+                android:id="@+id/detail_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="12:30 分類"
@@ -62,6 +65,7 @@
         android:orientation="horizontal">
 
         <TextView
+            android:id="@+id/detail_amount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="-11.00"
@@ -71,6 +75,7 @@
             android:textColor="?colorOnSurface" />
 
         <TextView
+            android:id="@+id/detail_currency"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="$"

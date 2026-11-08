@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -29,6 +30,7 @@ import org.akanework.riviere.logic.px
 import org.akanework.riviere.logic.utils.DecimalDigitsInputFilter
 import org.akanework.riviere.ui.adapters.HomeChipAdapter
 import org.akanework.riviere.ui.adapters.HomePresetAdapter
+import org.akanework.riviere.ui.adapters.TransactionAdapter
 import org.akanework.riviere.ui.data.HolderTypes
 
 
@@ -47,6 +49,19 @@ class HomeFragment : BaseFragment() {
     private var colorPlusOnPrimaryContainer: Int = -1
     private var colorMinusPrimaryContainer: Int = -1
     private var colorMinusOnPrimaryContainer: Int = -1
+
+    private lateinit var roundCounterTextView: TextView
+    private lateinit var decimalCounterTextView: TextView
+    private lateinit var currencyIcon: TextView
+    private lateinit var incomeTextView: TextView
+    private lateinit var budgetTextView: TextView
+    private lateinit var headerIncomeTextView: TextView
+    private lateinit var headerExpenseTextView: TextView
+
+    private val transactions = mutableListOf<HolderTypes.TransactionEntry>()
+    private var selectedChipIndex = 0
+    private var budgetLimit = 5000f
+    private lateinit var transactionAdapter: TransactionAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -74,19 +89,32 @@ class HomeFragment : BaseFragment() {
 
         formatSwitchButton = rootView.findViewById(R.id.plus_minus_switch)
 
+        val recordButton: MaterialButton = rootView.findViewById(R.id.record_button)
+        val quickRecordText: TextView = rootView.findViewById(R.id.quick_record_text)
+        val newPresetButton: MaterialButton = rootView.findViewById(R.id.new_preset)
+        val currencyTextView: TextView = rootView.findViewById(R.id.value_currency)
+
         // Bottom part
         val bottomSheet: FrameLayout = rootView.findViewById(R.id.bottom_sheet)
         val standardBottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
         val bottomSheetHeaderCard: MaterialCardView = bottomSheet.findViewById(R.id.bottom_header)
         val expenseTitleTextView: TextView = bottomSheet.findViewById(R.id.expense_title)
-        val currencyIcon: TextView = bottomSheet.findViewById(R.id.currency)
-        val roundCounterTextView: TextView = bottomSheet.findViewById(R.id.round)
-        val decimalCounterTextView: TextView = bottomSheet.findViewById(R.id.decimal)
+        currencyIcon = bottomSheet.findViewById(R.id.currency)
+        roundCounterTextView = bottomSheet.findViewById(R.id.round)
+        decimalCounterTextView = bottomSheet.findViewById(R.id.decimal)
         val incomeTitleTextView: TextView = bottomSheet.findViewById(R.id.income_title)
-        val incomeTextView: TextView = bottomSheet.findViewById(R.id.income)
+        incomeTextView = bottomSheet.findViewById(R.id.income)
         val budgetTitleTextView: TextView = bottomSheet.findViewById(R.id.budget_title)
-        val budgetTextView: TextView = bottomSheet.findViewById(R.id.budget)
+        budgetTextView = bottomSheet.findViewById(R.id.budget)
         val budgetSlider: Slider = bottomSheet.findViewById(R.id.budget_slider)
+
+        headerIncomeTextView = rootView.findViewById(R.id.header_income_total)
+        headerExpenseTextView = rootView.findViewById(R.id.header_expense_total)
+
+        val transactionRecyclerView: RecyclerView = rootView.findViewById(R.id.transaction_recyclerview)
+        transactionAdapter = TransactionAdapter(transactions)
+        transactionRecyclerView.adapter = transactionAdapter
+        transactionRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         // Get colors
         val colorPositiveBottomHeaderPrimaryContainer =
@@ -179,37 +207,83 @@ class HomeFragment : BaseFragment() {
 
         standardBottomSheetBehavior.peekHeight = halfScreenHeight
 
+        standardBottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {}
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
+        budgetSlider.addOnChangeListener { _, value, _ ->
+            budgetLimit = value * 10000f
+            refreshBottomSheet()
+        }
+
+        val presetData = mutableListOf(
+            HolderTypes.PresetType(null, "星巴克", -50f, isBlock = false),
+            HolderTypes.PresetType(isBlock = true)
+        )
         presetRecyclerView.adapter = HomePresetAdapter(
-            mutableListOf(
-                HolderTypes.PresetType(
-                    null,
-                    "星巴克",
-                    -50f,
-                    isBlock = false
-                ),
-                HolderTypes.PresetType(
-                    isBlock = true
-                )
-            ),
-            requireContext()
+            presetData,
+            requireContext(),
+            onItemClick = { preset ->
+                if (preset.isBlock) {
+                    Toast.makeText(requireContext(), "Add preset coming soon", Toast.LENGTH_SHORT).show()
+                } else {
+                    val absValue = Math.abs(preset.defVal ?: 0f)
+                    targetExpenseEditText.setText(absValue.toString())
+                    preset.currencyType?.let { currencyTextView.text = it.toString() }
+                    val shouldBeIncome = (preset.defVal ?: 0f) > 0
+                    if (shouldBeIncome != prefs.getBoolean("switch_button_state", true)) {
+                        setButtonStatus(shouldBeIncome, true)
+                        prefs.edit().putBoolean("switch_button_state", shouldBeIncome).apply()
+                    }
+                }
+            }
         )
         presetRecyclerView.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        chipRecyclerView.adapter = HomeChipAdapter(
-            mutableListOf(
-                HolderTypes.ChipType(
-                    R.drawable.ic_category_filled,
-                    "默认"
-                ),
-                HolderTypes.ChipType(
 
-                ),
-                HolderTypes.ChipType(
-                    isBlock = true
-                )
-            ),
-            requireContext()
+        val chipData = mutableListOf(
+            HolderTypes.ChipType(R.drawable.ic_category_filled, "默认"),
+            HolderTypes.ChipType(),
+            HolderTypes.ChipType(isBlock = true)
         )
+        val chipAdapter = HomeChipAdapter(
+            chipData,
+            requireContext(),
+            onChipSelected = { index, chip ->
+                if (chip.isBlock) {
+                    Toast.makeText(requireContext(), "Add category coming soon", Toast.LENGTH_SHORT).show()
+                } else {
+                    selectedChipIndex = index
+                }
+            }
+        )
+        chipRecyclerView.adapter = chipAdapter
         chipRecyclerView.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+
+        val recordAction = {
+            val rawText = targetExpenseEditText.text.toString()
+            val amount = rawText.toFloatOrNull()
+            if (amount != null && amount != 0f) {
+                val isIncome = prefs.getBoolean("switch_button_state", true)
+                val categoryName = if (chipAdapter.selectedIndex < chipData.size) {
+                    chipData[chipAdapter.selectedIndex].desc ?: "未分类"
+                } else {
+                    "未分类"
+                }
+                transactions.add(HolderTypes.TransactionEntry(amount, isIncome, categoryName, null))
+                targetExpenseEditText.text.clear()
+                transactionAdapter.notifyDataSetChanged()
+                refreshBottomSheet()
+            }
+        }
+
+        recordButton.setOnClickListener { recordAction() }
+        quickRecordText.setOnClickListener { recordAction() }
+        newPresetButton.setOnClickListener {
+            Toast.makeText(requireContext(), "Add preset coming soon", Toast.LENGTH_SHORT).show()
+        }
+
+        refreshBottomSheet()
 
         return rootView
     }
@@ -278,6 +352,31 @@ class HomeFragment : BaseFragment() {
             (formatSwitchButton.icon as AnimatedVectorDrawable).start()
         }
     }
+
+    private fun refreshBottomSheet() {
+        val totalExpense = transactions.filter { !it.isIncome }.sumOf { it.amount.toDouble() }.toFloat()
+        val totalIncome = transactions.filter { it.isIncome }.sumOf { it.amount.toDouble() }.toFloat()
+        val balance = totalIncome - totalExpense
+
+        setBalanceNumber(balance)
+
+        incomeTextView.text = "+${formatAmount(totalIncome)}$"
+        budgetTextView.text = "-${formatAmount(totalExpense)}$"
+
+        headerIncomeTextView.text = "+${formatAmount(totalIncome)}$"
+        headerExpenseTextView.text = "-${formatAmount(totalExpense)}$"
+    }
+
+    private fun setBalanceNumber(value: Float) {
+        val absValue = Math.abs(value)
+        val formatted = String.format("%.2f", absValue)
+        val parts = formatted.split(".")
+        val prefix = if (value < 0) "-" else ""
+        roundCounterTextView.text = "$prefix${parts[0]}."
+        decimalCounterTextView.text = parts.getOrElse(1) { "00" }
+    }
+
+    private fun formatAmount(value: Float): String = String.format("%.2f", value)
 
     private fun setupUpperPart() {
         targetExpenseEditText.setFilters(

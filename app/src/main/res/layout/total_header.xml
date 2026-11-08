@@ -20,6 +20,7 @@
         android:layout_marginEnd="32dp">
 
         <TextView
+            android:id="@+id/header_income_total"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="+100.00$"
@@ -29,6 +30,7 @@
             android:textColor="?colorPrimary"/>
 
         <TextView
+            android:id="@+id/header_expense_total"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="-100.00$"

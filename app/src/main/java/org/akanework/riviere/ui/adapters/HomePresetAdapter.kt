@@ -13,7 +13,8 @@ import org.akanework.riviere.ui.data.HolderTypes
 
 class HomePresetAdapter (
     private val cardData: MutableList<HolderTypes.PresetType>,
-    private val context: Context
+    private val context: Context,
+    private val onItemClick: (HolderTypes.PresetType) -> Unit
 ) : RecyclerView.Adapter<HomePresetAdapter.ViewHolder> ()  {
 
     // private val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -60,6 +61,7 @@ class HomePresetAdapter (
             context,
             cardData[position].icon ?: R.drawable.ic_local_cafe
         ))
+        holder.itemView.setOnClickListener { onItemClick(cardData[position]) }
     }
 
     /*

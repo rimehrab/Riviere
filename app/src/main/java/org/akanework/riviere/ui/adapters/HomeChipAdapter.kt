@@ -13,10 +13,12 @@ import org.akanework.riviere.ui.data.HolderTypes
 
 class HomeChipAdapter (
     private val cardData: MutableList<HolderTypes.ChipType>,
-    private val context: Context
+    private val context: Context,
+    private val onChipSelected: (Int, HolderTypes.ChipType) -> Unit
 ) : RecyclerView.Adapter<HomeChipAdapter.ViewHolder> ()  {
 
     // private val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+    var selectedIndex: Int = 0
 
     inner class ViewHolder(view: View) :
         RecyclerView.ViewHolder(view) {
@@ -41,7 +43,7 @@ class HomeChipAdapter (
     }
 
     override fun getItemViewType(position: Int): Int =
-        if (!cardData[position].isBlock && position == 0) {
+        if (!cardData[position].isBlock && position == selectedIndex) {
             0
         } else if (!cardData[position].isBlock) {
             1
@@ -60,6 +62,15 @@ class HomeChipAdapter (
                     cardData[position].icon ?: R.drawable.ic_local_cafe
                 )
             )
+            holder.itemView.setOnClickListener {
+                selectedIndex = position
+                notifyDataSetChanged()
+                onChipSelected(position, cardData[position])
+            }
+        } else {
+            holder.itemView.setOnClickListener {
+                onChipSelected(-1, cardData[position])
+            }
         }
     }
 
